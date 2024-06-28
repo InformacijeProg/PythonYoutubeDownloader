@@ -53,7 +53,7 @@ A Python application to download YouTube videos and their transcripts. The appli
 2. **Run the application:**
 
    ```sh
-   python main.py
+   python YoutubeDownloader.py
    ```
 
 3. **Using the Application:**
