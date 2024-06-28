@@ -1,9 +1,11 @@
+
 import os
 import tkinter
 import customtkinter  # type: ignore
 from pytube import YouTube  # type: ignore
 from tkinter import ttk, scrolledtext
 import threading
+
 from youtube_transcript_api import YouTubeTranscriptApi # type: ignore
 
 stre: list[str] = []
