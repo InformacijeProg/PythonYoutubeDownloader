@@ -16,13 +16,10 @@ Supports high-resolution video+audio downloads with **progress tracking**, **aut
 ## 🚀 Features
 
 - ✅ Fetch and display all available video resolutions
-- ✅ Auto-fill URL from clipboard (YouTube links only)
 - ✅ Auto-fill video title into filename (e.g. `MyVideo_1080p.mp4`)
 - ✅ Download video+audio merged via FFmpeg (portable)
-- ✅ Matrix-style task log panel with colored log levels
 - ✅ Smooth progress bar (no double pass)
 - ✅ Portable mode (FFmpeg embedded in `bin/` folder)
-- ✅ Error handling with visible `[ERROR]` logs
 
 ---
 
@@ -43,7 +40,7 @@ Supports high-resolution video+audio downloads with **progress tracking**, **aut
 2. Click **"Fetch Resolutions"**.
 3. Choose a resolution from the dropdown.
 4. Click **"Download Video"** — the filename will be auto-filled.
-5. Monitor progress + task log in real-time.
+5. Monitor progress.
 6. (Optional) Click **Delete File** to remove the downloaded file.
 
 ---
@@ -57,7 +54,6 @@ YoutubeDownloader/
 │   └── ffmpeg.exe
 ├── assets/
 │   ├── screenshot_ui.png
-│   ├── screenshot_log.png
 │   └── screenshot_layout.png
 └── README.md
 ```
