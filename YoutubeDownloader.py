@@ -1,49 +1,146 @@
-
 import os
+import sys
 import tkinter
+from tkinter import ttk, filedialog
 import customtkinter  # type: ignore
-from pytube import YouTube  # type: ignore
-from tkinter import ttk, scrolledtext
 import threading
+import yt_dlp  # type: ignore
+from PIL import Image, ImageTk  
+import urllib.request
+import io
 
-from youtube_transcript_api import YouTubeTranscriptApi # type: ignore
-
-stre: list[str] = []
-downloading = False
-current_stream = None
-download_thread = None
+video_url = ""
 downloaded_file_path = None
-transcription_text = ''
-transcript_file_path = None
+video_heights: list[str] = []
+selected_heights: list[int] = []
+video_title = ""
+thumbnail_url = ""
+thumbnail_image = None
 
-def startDownload():
+# ─────────────────────────────
+def fetch_resolutions():
+    global selected_heights, video_title, thumbnail_url, thumbnail_image
+
     try:
-        ytLink = link.get()
-        ytObject = YouTube(ytLink)
+        ydl_opts = {
+            'quiet': True,
+            'skip_download': True,
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(video_url, download=False)
+            formats = info.get("formats", [])
+            video_title = info.get("title", "video")
+            thumbnail_url = info.get("thumbnail", "")
 
-        # Filtering streams for progressive (video + audio) streams
-        streams = ytObject.streams.filter(progressive=True, file_extension='mp4')
-        stre.clear()
+            resolutions = sorted(set(
+                fmt.get("height") for fmt in formats if fmt.get("vcodec") != "none"
+            ), reverse=True)
 
-        # List all available streams
-        seen_resolutions = set()
-        for stream in ytObject.streams:
-            resolution = stream.resolution
-            if resolution and resolution not in seen_resolutions:
-                size_in_mb = round(stream.filesize / (1024 * 1024), 2)  # Convert to MB and round to 2 decimal places
-                stre.append(f"{resolution} {size_in_mb}Mb")
-                seen_resolutions.add(resolution)
+            video_heights.clear()
+            selected_heights.clear()
+            for h in resolutions:
+                if h:
+                    label = f"{h}p"
+                    video_heights.append(label)
+                    selected_heights.append(h)
 
-        # Sort the list by resolution
-        stre.sort(key=lambda x: int(x.split('p')[0]))
+            combo['values'] = video_heights
+            if video_heights:
+                combo.current(0)
+                resolution_count_label.configure(text=f"{len(video_heights)} resolutions")
+            else:
+                resolution_count_label.configure(text="No formats")
 
-        # Populate combo box
-        combo['values'] = stre
-        if stre:
-            combo.current(0)
+            title_label.configure(text=f"Title: {video_title}")
+            load_thumbnail(thumbnail_url)
 
     except Exception as e:
-        print(f"Error retrieving video streams\n{e}")
+        resolution_count_label.configure(text="Error")
+        title_label.configure(text="Title: Error")
+        status_label.configure(text=f"Fetch error: {e}")
+
+# ─────────────────────────────
+def load_thumbnail(url):
+    global thumbnail_image
+    try:
+        with urllib.request.urlopen(url) as response:
+            data = response.read()
+            img = Image.open(io.BytesIO(data))
+            img = img.resize((320, 180), Image.LANCZOS)
+            thumbnail_image = ImageTk.PhotoImage(img)
+            thumbnail_label.configure(image=thumbnail_image)
+    except Exception as e:
+        thumbnail_label.configure(image="")
+        print("Thumbnail load failed:", e)
+
+# ─────────────────────────────
+def start_fetch_thread():
+    global video_url
+    video_url = link.get().strip()
+    if not video_url.startswith("http"):
+        status_label.configure(text="Invalid URL.")
+        return
+    resolution_count_label.configure(text="Loading...")
+    threading.Thread(target=fetch_resolutions, daemon=True).start()
+
+# ─────────────────────────────
+def download_video():
+    global downloaded_file_path
+    try:
+        sel_index = combo.current()
+        if sel_index < 0:
+            status_label.configure(text="No resolution selected.")
+            return
+
+        height = selected_heights[sel_index]
+        format_string = f"bestvideo[height={height}]+bestaudio/best"
+
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".mp4",
+            initialfile=f"{video_title}_{height}p.mp4",
+            filetypes=[("MP4 files", "*.mp4")]
+        )
+        if not file_path:
+            status_label.configure(text="Download cancelled.")
+            return
+
+        BASE_DIR = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+        FFMPEG_PATH = os.path.join(BASE_DIR, "bin", "ffmpeg.exe")
+
+        ydl_opts = {
+            'quiet': False,
+            'format': format_string,
+            'outtmpl': file_path,
+            'merge_output_format': 'mp4',
+            'ffmpeg_location': FFMPEG_PATH,
+            'noplaylist': True,
+            'progress_hooks': [progress_hook],
+        }
+
+        progress_var.set(0)
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([video_url])
+
+        downloaded_file_path = file_path
+        status_label.configure(text="Download complete.")
+        delete_button.configure(state=tkinter.NORMAL)
+
+    except Exception as e:
+        status_label.configure(text=f"Download error: {e}")
+        print(e)
+
+# ─────────────────────────────
+def start_download_thread():
+    delete_button.configure(state=tkinter.DISABLED)
+    threading.Thread(target=download_video, daemon=True).start()
+
+def progress_hook(d):
+    if d['status'] == 'downloading':
+        total = d.get('total_bytes') or d.get('total_bytes_estimate') or 0
+        downloaded = d.get('downloaded_bytes', 0)
+        percent = (downloaded / total) * 100 if total > 0 else 0
+        progress_var.set(percent)
+        progress_bar.update_idletasks()
 
 def deleteFile():
     global downloaded_file_path
@@ -54,162 +151,60 @@ def deleteFile():
             delete_button.configure(state=tkinter.DISABLED)
             downloaded_file_path = None
         except Exception as e:
-            print(f"Error deleting file: {e}")
-            status_label.configure(text="Error deleting file.")
+            status_label.configure(text="Delete error.")
+            print(e)
 
-def downloadVideo():
-    global downloading, current_stream, download_thread, downloaded_file_path, transcription_text
-    downloading = True
-    try:
-        progress_var.set(0)  # Initialize progress bar to 0
-        ytLink = link.get()
-        ytObject = YouTube(ytLink, on_progress_callback=progressFunction)
-
-        selected_item = combo.get()
-        selected_resolution = selected_item.split(' ')[0]
-        stream = ytObject.streams.filter(res=selected_resolution, file_extension='mp4').first()
-        current_stream = stream
-
-        if stream:
-            downloaded_file_path = stream.default_filename
-            stream.download()
-            print("Download completed!")
-            status_label.configure(text="VIDEO DOWNLOADED")
-            delete_button.configure(state=tkinter.NORMAL)
-
-            video_id = ytLink.split('v=')[1]
-            transcription_text = get_video_transcript(video_id)
-            transcript_text_box.delete('1.0', tkinter.END)
-            transcript_text_box.insert(tkinter.END, transcription_text)
-            save_button.configure(state=tkinter.NORMAL)
-        else:
-            print("Selected resolution not available.")
-    except Exception as e:
-        print(f"Error downloading video\n{e}")
-        status_label.configure(text="Error during download")
-
-def progressFunction(stream, chunk, bytes_remaining):
-    total_size = stream.filesize
-    bytes_downloaded = total_size - bytes_remaining
-    percentage = (bytes_downloaded / total_size) * 100
-    progress_var.set(percentage)
-    progress_bar.update()
-
-def startDownloadThread():
-    global download_thread
-    delete_button.configure(state=tkinter.DISABLED)
-    download_thread = threading.Thread(target=downloadVideo)
-    download_thread.start()
-
-def save_transcript():
-    global transcript_file_path
-    if downloaded_file_path and transcription_text:
-        try:
-            transcript_file_path = f"{downloaded_file_path}.txt"
-            with open(transcript_file_path, 'w', encoding='utf-8') as file:
-                file.write(transcription_text)
-            status_label.configure(text="Transcript saved.")
-            delete_transcript_button.configure(state=tkinter.NORMAL)
-        except Exception as e:
-            print(f"Error saving transcript: {e}")
-            status_label.configure(text="Error saving transcript.")
-
-def delete_transcript():
-    global transcript_file_path
-    if transcript_file_path and os.path.exists(transcript_file_path):
-        try:
-            os.remove(transcript_file_path)
-            status_label.configure(text="Transcript file deleted.")
-            delete_transcript_button.configure(state=tkinter.DISABLED)
-            transcript_file_path = None
-        except Exception as e:
-            print(f"Error deleting transcript file: {e}")
-            status_label.configure(text="Error deleting transcript file.")
-
-def get_video_transcript(video_id):
-    try:
-        transcript = YouTubeTranscriptApi.get_transcript(video_id)
-        transcript_text = ' '.join([entry['text'] for entry in transcript])
-        return transcript_text
-    except Exception as e:
-        print(f"Error retrieving transcript: {e}")
-        return 'Transcript not available.'
-
+# ─────────────────────────────
+# GUI SETUP
 customtkinter.set_appearance_mode("System")
 customtkinter.set_default_color_theme("blue")
 
-# Our app frame
 app = customtkinter.CTk()
-app.geometry("720x800")
-app.title("YouTube Downloader")
+app.geometry("1000x600")
+app.title("YouTube Downloader - Portable (yt-dlp + ffmpeg)")
 
 title = customtkinter.CTkLabel(app, text="YouTube video URL")
-title.pack(padx=10, pady=10)
+title.pack(pady=(10, 2))
 
-# Link input
 url_var = tkinter.StringVar()
-link = customtkinter.CTkEntry(app, width=450, height=40, textvariable=url_var)
+link = customtkinter.CTkEntry(app, width=700, height=40, textvariable=url_var)
 link.pack()
 
-# Bind the change event to the link input
-def on_link_change(*args):
-    startDownload()
+url_button = customtkinter.CTkButton(app, text="Fetch Resolutions", command=start_fetch_thread)
+url_button.pack(pady=(5, 10))
 
-url_var.trace_add('write', on_link_change)
+combo_frame = customtkinter.CTkFrame(app)
+combo_frame.pack()
 
-# Create a style for the combo box
-style = ttk.Style()
-style.configure("TCombobox", font=("Helvetica", 12, "bold"))
+combo = ttk.Combobox(combo_frame, width=50)
+combo.pack(side=tkinter.LEFT, padx=5)
 
-# Combo box
-combo = ttk.Combobox(app, width=40, style="TCombobox")
-combo.pack(pady=20)
+resolution_count_label = customtkinter.CTkLabel(combo_frame, text="")
+resolution_count_label.pack(side=tkinter.LEFT, padx=10)
 
-# Button frame
-button_frame = customtkinter.CTkFrame(app, width=250, height=20)
-button_frame.pack(pady=(80, 10))
+button_frame = customtkinter.CTkFrame(app)
+button_frame.pack(pady=(5, 5))
 
-# Delete Button
-delete_button = customtkinter.CTkButton(button_frame, text="Delete Video", command=deleteFile, state=tkinter.DISABLED)
-delete_button.pack(side=tkinter.LEFT, padx=5, pady=10)
+delete_button = customtkinter.CTkButton(button_frame, text="Delete File", command=deleteFile, state=tkinter.DISABLED)
+delete_button.pack(side=tkinter.LEFT, padx=20)
 
-# Download Button
-download = customtkinter.CTkButton(button_frame, text="Download", command=startDownloadThread)
-download.pack(side=tkinter.LEFT, padx=5, pady=10)
+download = customtkinter.CTkButton(button_frame, text="Download Video", command=start_download_thread)
+download.pack(side=tkinter.LEFT, padx=20)
 
-# Progress Bar frame
-progress_frame = customtkinter.CTkFrame(app, width=350, height=20)
-progress_frame.pack(pady=(10, 20))
+progress_frame = customtkinter.CTkFrame(app)
+progress_frame.pack(pady=10)
 
-# Progress Bar
 progress_var = tkinter.DoubleVar()
-progress_bar = ttk.Progressbar(progress_frame, variable=progress_var, maximum=100, length=350, mode='determinate')
-progress_bar.pack(pady=5)
+progress_bar = ttk.Progressbar(progress_frame, variable=progress_var, maximum=100, length=800, mode='determinate')
+progress_bar.pack()
 
-# Status Label
 status_label = customtkinter.CTkLabel(app, text="")
-status_label.pack(pady=10)
+status_label.pack(pady=5)
 
-title_t = customtkinter.CTkLabel(app, text="YouTube video Transcript")
-title_t.pack(pady=10)
+title_label = customtkinter.CTkLabel(app, text="Title: ")
+title_label.pack(pady=5)
 
-# Transcription frame
-transcription_frame = customtkinter.CTkFrame(app, width=640, height=200)
-transcription_frame.pack(pady=10)
+thumbnail_label = tkinter.Label(app)
+thumbnail_label.pack(pady=10)
 
-# Transcription text box
-transcript_text_box = scrolledtext.ScrolledText(transcription_frame, wrap=tkinter.WORD, width=70, height=12, bg="black", fg="white")
-transcript_text_box.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True)
-
-# Save Button
-save_button = customtkinter.CTkButton(app, text="SAVE", command=save_transcript, state=tkinter.DISABLED)
-save_button.pack(pady=5)
-
-# Delete Transcript Button
-delete_transcript_button = customtkinter.CTkButton(app, text="DELETE Transcript", command=delete_transcript, state=tkinter.DISABLED)
-delete_transcript_button.pack(pady=5)
-
-style.configure("TProgressbar", troughcolor='white', background='blue')
-
-# Run app
 app.mainloop()

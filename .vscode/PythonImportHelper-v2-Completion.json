@@ -1,0 +1,367 @@
+[
+    {
+        "label": "os",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "os",
+        "description": "os",
+        "detail": "os",
+        "documentation": {}
+    },
+    {
+        "label": "sys",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "sys",
+        "description": "sys",
+        "detail": "sys",
+        "documentation": {}
+    },
+    {
+        "label": "tkinter",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "tkinter",
+        "description": "tkinter",
+        "detail": "tkinter",
+        "documentation": {}
+    },
+    {
+        "label": "ttk",
+        "importPath": "tkinter",
+        "description": "tkinter",
+        "isExtraImport": true,
+        "detail": "tkinter",
+        "documentation": {}
+    },
+    {
+        "label": "filedialog",
+        "importPath": "tkinter",
+        "description": "tkinter",
+        "isExtraImport": true,
+        "detail": "tkinter",
+        "documentation": {}
+    },
+    {
+        "label": "customtkinter",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "customtkinter",
+        "description": "customtkinter",
+        "detail": "customtkinter",
+        "documentation": {}
+    },
+    {
+        "label": "threading",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "threading",
+        "description": "threading",
+        "detail": "threading",
+        "documentation": {}
+    },
+    {
+        "label": "yt_dlp",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "yt_dlp",
+        "description": "yt_dlp",
+        "detail": "yt_dlp",
+        "documentation": {}
+    },
+    {
+        "label": "Image",
+        "importPath": "PIL",
+        "description": "PIL",
+        "isExtraImport": true,
+        "detail": "PIL",
+        "documentation": {}
+    },
+    {
+        "label": "ImageTk",
+        "importPath": "PIL",
+        "description": "PIL",
+        "isExtraImport": true,
+        "detail": "PIL",
+        "documentation": {}
+    },
+    {
+        "label": "urllib.request",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "urllib.request",
+        "description": "urllib.request",
+        "detail": "urllib.request",
+        "documentation": {}
+    },
+    {
+        "label": "io",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "io",
+        "description": "io",
+        "detail": "io",
+        "documentation": {}
+    },
+    {
+        "label": "fetch_resolutions",
+        "kind": 2,
+        "importPath": "YoutubeDownloader",
+        "description": "YoutubeDownloader",
+        "peekOfCode": "def fetch_resolutions():\n    global selected_heights, video_title, thumbnail_url, thumbnail_image\n    try:\n        ydl_opts = {\n            'quiet': True,\n            'skip_download': True,\n        }\n        with yt_dlp.YoutubeDL(ydl_opts) as ydl:\n            info = ydl.extract_info(video_url, download=False)\n            formats = info.get(\"formats\", [])",
+        "detail": "YoutubeDownloader",
+        "documentation": {}
+    },
+    {
+        "label": "load_thumbnail",
+        "kind": 2,
+        "importPath": "YoutubeDownloader",
+        "description": "YoutubeDownloader",
+        "peekOfCode": "def load_thumbnail(url):\n    global thumbnail_image\n    try:\n        with urllib.request.urlopen(url) as response:\n            data = response.read()\n            img = Image.open(io.BytesIO(data))\n            img = img.resize((320, 180), Image.LANCZOS)\n            thumbnail_image = ImageTk.PhotoImage(img)\n            thumbnail_label.configure(image=thumbnail_image)\n    except Exception as e:",
+        "detail": "YoutubeDownloader",
+        "documentation": {}
+    },
+    {
+        "label": "start_fetch_thread",
+        "kind": 2,
+        "importPath": "YoutubeDownloader",
+        "description": "YoutubeDownloader",
+        "peekOfCode": "def start_fetch_thread():\n    global video_url\n    video_url = link.get().strip()\n    if not video_url.startswith(\"http\"):\n        status_label.configure(text=\"Invalid URL.\")\n        return\n    resolution_count_label.configure(text=\"Loading...\")\n    threading.Thread(target=fetch_resolutions, daemon=True).start()\n# ─────────────────────────────\ndef download_video():",
+        "detail": "YoutubeDownloader",
+        "documentation": {}
+    },
+    {
+        "label": "download_video",
+        "kind": 2,
+        "importPath": "YoutubeDownloader",
+        "description": "YoutubeDownloader",
+        "peekOfCode": "def download_video():\n    global downloaded_file_path\n    try:\n        sel_index = combo.current()\n        if sel_index < 0:\n            status_label.configure(text=\"No resolution selected.\")\n            return\n        height = selected_heights[sel_index]\n        format_string = f\"bestvideo[height={height}]+bestaudio/best\"\n        file_path = filedialog.asksaveasfilename(",
+        "detail": "YoutubeDownloader",
+        "documentation": {}
+    },
+    {
+        "label": "start_download_thread",
+        "kind": 2,
+        "importPath": "YoutubeDownloader",
+        "description": "YoutubeDownloader",
+        "peekOfCode": "def start_download_thread():\n    delete_button.configure(state=tkinter.DISABLED)\n    threading.Thread(target=download_video, daemon=True).start()\ndef progress_hook(d):\n    if d['status'] == 'downloading':\n        total = d.get('total_bytes') or d.get('total_bytes_estimate') or 0\n        downloaded = d.get('downloaded_bytes', 0)\n        percent = (downloaded / total) * 100 if total > 0 else 0\n        progress_var.set(percent)\n        progress_bar.update_idletasks()",
+        "detail": "YoutubeDownloader",
+        "documentation": {}
+    },
+    {
+        "label": "progress_hook",
+        "kind": 2,
+        "importPath": "YoutubeDownloader",
+        "description": "YoutubeDownloader",
+        "peekOfCode": "def progress_hook(d):\n    if d['status'] == 'downloading':\n        total = d.get('total_bytes') or d.get('total_bytes_estimate') or 0\n        downloaded = d.get('downloaded_bytes', 0)\n        percent = (downloaded / total) * 100 if total > 0 else 0\n        progress_var.set(percent)\n        progress_bar.update_idletasks()\ndef deleteFile():\n    global downloaded_file_path\n    if downloaded_file_path and os.path.exists(downloaded_file_path):",
+        "detail": "YoutubeDownloader",
+        "documentation": {}
+    },
+    {
+        "label": "deleteFile",
+        "kind": 2,
+        "importPath": "YoutubeDownloader",
+        "description": "YoutubeDownloader",
+        "peekOfCode": "def deleteFile():\n    global downloaded_file_path\n    if downloaded_file_path and os.path.exists(downloaded_file_path):\n        try:\n            os.remove(downloaded_file_path)\n            status_label.configure(text=\"File deleted.\")\n            delete_button.configure(state=tkinter.DISABLED)\n            downloaded_file_path = None\n        except Exception as e:\n            status_label.configure(text=\"Delete error.\")",
+        "detail": "YoutubeDownloader",
+        "documentation": {}
+    },
+    {
+        "label": "video_url",
+        "kind": 5,
+        "importPath": "YoutubeDownloader",
+        "description": "YoutubeDownloader",
+        "peekOfCode": "video_url = \"\"\ndownloaded_file_path = None\nvideo_heights: list[str] = []\nselected_heights: list[int] = []\nvideo_title = \"\"\nthumbnail_url = \"\"\nthumbnail_image = None\n# ─────────────────────────────\ndef fetch_resolutions():\n    global selected_heights, video_title, thumbnail_url, thumbnail_image",
+        "detail": "YoutubeDownloader",
+        "documentation": {}
+    },
+    {
+        "label": "downloaded_file_path",
+        "kind": 5,
+        "importPath": "YoutubeDownloader",
+        "description": "YoutubeDownloader",
+        "peekOfCode": "downloaded_file_path = None\nvideo_heights: list[str] = []\nselected_heights: list[int] = []\nvideo_title = \"\"\nthumbnail_url = \"\"\nthumbnail_image = None\n# ─────────────────────────────\ndef fetch_resolutions():\n    global selected_heights, video_title, thumbnail_url, thumbnail_image\n    try:",
+        "detail": "YoutubeDownloader",
+        "documentation": {}
+    },
+    {
+        "label": "video_title",
+        "kind": 5,
+        "importPath": "YoutubeDownloader",
+        "description": "YoutubeDownloader",
+        "peekOfCode": "video_title = \"\"\nthumbnail_url = \"\"\nthumbnail_image = None\n# ─────────────────────────────\ndef fetch_resolutions():\n    global selected_heights, video_title, thumbnail_url, thumbnail_image\n    try:\n        ydl_opts = {\n            'quiet': True,\n            'skip_download': True,",
+        "detail": "YoutubeDownloader",
+        "documentation": {}
+    },
+    {
+        "label": "thumbnail_url",
+        "kind": 5,
+        "importPath": "YoutubeDownloader",
+        "description": "YoutubeDownloader",
+        "peekOfCode": "thumbnail_url = \"\"\nthumbnail_image = None\n# ─────────────────────────────\ndef fetch_resolutions():\n    global selected_heights, video_title, thumbnail_url, thumbnail_image\n    try:\n        ydl_opts = {\n            'quiet': True,\n            'skip_download': True,\n        }",
+        "detail": "YoutubeDownloader",
+        "documentation": {}
+    },
+    {
+        "label": "thumbnail_image",
+        "kind": 5,
+        "importPath": "YoutubeDownloader",
+        "description": "YoutubeDownloader",
+        "peekOfCode": "thumbnail_image = None\n# ─────────────────────────────\ndef fetch_resolutions():\n    global selected_heights, video_title, thumbnail_url, thumbnail_image\n    try:\n        ydl_opts = {\n            'quiet': True,\n            'skip_download': True,\n        }\n        with yt_dlp.YoutubeDL(ydl_opts) as ydl:",
+        "detail": "YoutubeDownloader",
+        "documentation": {}
+    },
+    {
+        "label": "app",
+        "kind": 5,
+        "importPath": "YoutubeDownloader",
+        "description": "YoutubeDownloader",
+        "peekOfCode": "app = customtkinter.CTk()\napp.geometry(\"1000x600\")\napp.title(\"YouTube Downloader - Portable (yt-dlp + ffmpeg)\")\ntitle = customtkinter.CTkLabel(app, text=\"YouTube video URL\")\ntitle.pack(pady=(10, 2))\nurl_var = tkinter.StringVar()\nlink = customtkinter.CTkEntry(app, width=700, height=40, textvariable=url_var)\nlink.pack()\nurl_button = customtkinter.CTkButton(app, text=\"Fetch Resolutions\", command=start_fetch_thread)\nurl_button.pack(pady=(5, 10))",
+        "detail": "YoutubeDownloader",
+        "documentation": {}
+    },
+    {
+        "label": "title",
+        "kind": 5,
+        "importPath": "YoutubeDownloader",
+        "description": "YoutubeDownloader",
+        "peekOfCode": "title = customtkinter.CTkLabel(app, text=\"YouTube video URL\")\ntitle.pack(pady=(10, 2))\nurl_var = tkinter.StringVar()\nlink = customtkinter.CTkEntry(app, width=700, height=40, textvariable=url_var)\nlink.pack()\nurl_button = customtkinter.CTkButton(app, text=\"Fetch Resolutions\", command=start_fetch_thread)\nurl_button.pack(pady=(5, 10))\ncombo_frame = customtkinter.CTkFrame(app)\ncombo_frame.pack()\ncombo = ttk.Combobox(combo_frame, width=50)",
+        "detail": "YoutubeDownloader",
+        "documentation": {}
+    },
+    {
+        "label": "url_var",
+        "kind": 5,
+        "importPath": "YoutubeDownloader",
+        "description": "YoutubeDownloader",
+        "peekOfCode": "url_var = tkinter.StringVar()\nlink = customtkinter.CTkEntry(app, width=700, height=40, textvariable=url_var)\nlink.pack()\nurl_button = customtkinter.CTkButton(app, text=\"Fetch Resolutions\", command=start_fetch_thread)\nurl_button.pack(pady=(5, 10))\ncombo_frame = customtkinter.CTkFrame(app)\ncombo_frame.pack()\ncombo = ttk.Combobox(combo_frame, width=50)\ncombo.pack(side=tkinter.LEFT, padx=5)\nresolution_count_label = customtkinter.CTkLabel(combo_frame, text=\"\")",
+        "detail": "YoutubeDownloader",
+        "documentation": {}
+    },
+    {
+        "label": "link",
+        "kind": 5,
+        "importPath": "YoutubeDownloader",
+        "description": "YoutubeDownloader",
+        "peekOfCode": "link = customtkinter.CTkEntry(app, width=700, height=40, textvariable=url_var)\nlink.pack()\nurl_button = customtkinter.CTkButton(app, text=\"Fetch Resolutions\", command=start_fetch_thread)\nurl_button.pack(pady=(5, 10))\ncombo_frame = customtkinter.CTkFrame(app)\ncombo_frame.pack()\ncombo = ttk.Combobox(combo_frame, width=50)\ncombo.pack(side=tkinter.LEFT, padx=5)\nresolution_count_label = customtkinter.CTkLabel(combo_frame, text=\"\")\nresolution_count_label.pack(side=tkinter.LEFT, padx=10)",
+        "detail": "YoutubeDownloader",
+        "documentation": {}
+    },
+    {
+        "label": "url_button",
+        "kind": 5,
+        "importPath": "YoutubeDownloader",
+        "description": "YoutubeDownloader",
+        "peekOfCode": "url_button = customtkinter.CTkButton(app, text=\"Fetch Resolutions\", command=start_fetch_thread)\nurl_button.pack(pady=(5, 10))\ncombo_frame = customtkinter.CTkFrame(app)\ncombo_frame.pack()\ncombo = ttk.Combobox(combo_frame, width=50)\ncombo.pack(side=tkinter.LEFT, padx=5)\nresolution_count_label = customtkinter.CTkLabel(combo_frame, text=\"\")\nresolution_count_label.pack(side=tkinter.LEFT, padx=10)\nbutton_frame = customtkinter.CTkFrame(app)\nbutton_frame.pack(pady=(5, 5))",
+        "detail": "YoutubeDownloader",
+        "documentation": {}
+    },
+    {
+        "label": "combo_frame",
+        "kind": 5,
+        "importPath": "YoutubeDownloader",
+        "description": "YoutubeDownloader",
+        "peekOfCode": "combo_frame = customtkinter.CTkFrame(app)\ncombo_frame.pack()\ncombo = ttk.Combobox(combo_frame, width=50)\ncombo.pack(side=tkinter.LEFT, padx=5)\nresolution_count_label = customtkinter.CTkLabel(combo_frame, text=\"\")\nresolution_count_label.pack(side=tkinter.LEFT, padx=10)\nbutton_frame = customtkinter.CTkFrame(app)\nbutton_frame.pack(pady=(5, 5))\ndelete_button = customtkinter.CTkButton(button_frame, text=\"Delete File\", command=deleteFile, state=tkinter.DISABLED)\ndelete_button.pack(side=tkinter.LEFT, padx=20)",
+        "detail": "YoutubeDownloader",
+        "documentation": {}
+    },
+    {
+        "label": "combo",
+        "kind": 5,
+        "importPath": "YoutubeDownloader",
+        "description": "YoutubeDownloader",
+        "peekOfCode": "combo = ttk.Combobox(combo_frame, width=50)\ncombo.pack(side=tkinter.LEFT, padx=5)\nresolution_count_label = customtkinter.CTkLabel(combo_frame, text=\"\")\nresolution_count_label.pack(side=tkinter.LEFT, padx=10)\nbutton_frame = customtkinter.CTkFrame(app)\nbutton_frame.pack(pady=(5, 5))\ndelete_button = customtkinter.CTkButton(button_frame, text=\"Delete File\", command=deleteFile, state=tkinter.DISABLED)\ndelete_button.pack(side=tkinter.LEFT, padx=20)\ndownload = customtkinter.CTkButton(button_frame, text=\"Download Video\", command=start_download_thread)\ndownload.pack(side=tkinter.LEFT, padx=20)",
+        "detail": "YoutubeDownloader",
+        "documentation": {}
+    },
+    {
+        "label": "resolution_count_label",
+        "kind": 5,
+        "importPath": "YoutubeDownloader",
+        "description": "YoutubeDownloader",
+        "peekOfCode": "resolution_count_label = customtkinter.CTkLabel(combo_frame, text=\"\")\nresolution_count_label.pack(side=tkinter.LEFT, padx=10)\nbutton_frame = customtkinter.CTkFrame(app)\nbutton_frame.pack(pady=(5, 5))\ndelete_button = customtkinter.CTkButton(button_frame, text=\"Delete File\", command=deleteFile, state=tkinter.DISABLED)\ndelete_button.pack(side=tkinter.LEFT, padx=20)\ndownload = customtkinter.CTkButton(button_frame, text=\"Download Video\", command=start_download_thread)\ndownload.pack(side=tkinter.LEFT, padx=20)\nprogress_frame = customtkinter.CTkFrame(app)\nprogress_frame.pack(pady=10)",
+        "detail": "YoutubeDownloader",
+        "documentation": {}
+    },
+    {
+        "label": "button_frame",
+        "kind": 5,
+        "importPath": "YoutubeDownloader",
+        "description": "YoutubeDownloader",
+        "peekOfCode": "button_frame = customtkinter.CTkFrame(app)\nbutton_frame.pack(pady=(5, 5))\ndelete_button = customtkinter.CTkButton(button_frame, text=\"Delete File\", command=deleteFile, state=tkinter.DISABLED)\ndelete_button.pack(side=tkinter.LEFT, padx=20)\ndownload = customtkinter.CTkButton(button_frame, text=\"Download Video\", command=start_download_thread)\ndownload.pack(side=tkinter.LEFT, padx=20)\nprogress_frame = customtkinter.CTkFrame(app)\nprogress_frame.pack(pady=10)\nprogress_var = tkinter.DoubleVar()\nprogress_bar = ttk.Progressbar(progress_frame, variable=progress_var, maximum=100, length=800, mode='determinate')",
+        "detail": "YoutubeDownloader",
+        "documentation": {}
+    },
+    {
+        "label": "delete_button",
+        "kind": 5,
+        "importPath": "YoutubeDownloader",
+        "description": "YoutubeDownloader",
+        "peekOfCode": "delete_button = customtkinter.CTkButton(button_frame, text=\"Delete File\", command=deleteFile, state=tkinter.DISABLED)\ndelete_button.pack(side=tkinter.LEFT, padx=20)\ndownload = customtkinter.CTkButton(button_frame, text=\"Download Video\", command=start_download_thread)\ndownload.pack(side=tkinter.LEFT, padx=20)\nprogress_frame = customtkinter.CTkFrame(app)\nprogress_frame.pack(pady=10)\nprogress_var = tkinter.DoubleVar()\nprogress_bar = ttk.Progressbar(progress_frame, variable=progress_var, maximum=100, length=800, mode='determinate')\nprogress_bar.pack()\nstatus_label = customtkinter.CTkLabel(app, text=\"\")",
+        "detail": "YoutubeDownloader",
+        "documentation": {}
+    },
+    {
+        "label": "download",
+        "kind": 5,
+        "importPath": "YoutubeDownloader",
+        "description": "YoutubeDownloader",
+        "peekOfCode": "download = customtkinter.CTkButton(button_frame, text=\"Download Video\", command=start_download_thread)\ndownload.pack(side=tkinter.LEFT, padx=20)\nprogress_frame = customtkinter.CTkFrame(app)\nprogress_frame.pack(pady=10)\nprogress_var = tkinter.DoubleVar()\nprogress_bar = ttk.Progressbar(progress_frame, variable=progress_var, maximum=100, length=800, mode='determinate')\nprogress_bar.pack()\nstatus_label = customtkinter.CTkLabel(app, text=\"\")\nstatus_label.pack(pady=5)\ntitle_label = customtkinter.CTkLabel(app, text=\"Title: \")",
+        "detail": "YoutubeDownloader",
+        "documentation": {}
+    },
+    {
+        "label": "progress_frame",
+        "kind": 5,
+        "importPath": "YoutubeDownloader",
+        "description": "YoutubeDownloader",
+        "peekOfCode": "progress_frame = customtkinter.CTkFrame(app)\nprogress_frame.pack(pady=10)\nprogress_var = tkinter.DoubleVar()\nprogress_bar = ttk.Progressbar(progress_frame, variable=progress_var, maximum=100, length=800, mode='determinate')\nprogress_bar.pack()\nstatus_label = customtkinter.CTkLabel(app, text=\"\")\nstatus_label.pack(pady=5)\ntitle_label = customtkinter.CTkLabel(app, text=\"Title: \")\ntitle_label.pack(pady=5)\nthumbnail_label = tkinter.Label(app)",
+        "detail": "YoutubeDownloader",
+        "documentation": {}
+    },
+    {
+        "label": "progress_var",
+        "kind": 5,
+        "importPath": "YoutubeDownloader",
+        "description": "YoutubeDownloader",
+        "peekOfCode": "progress_var = tkinter.DoubleVar()\nprogress_bar = ttk.Progressbar(progress_frame, variable=progress_var, maximum=100, length=800, mode='determinate')\nprogress_bar.pack()\nstatus_label = customtkinter.CTkLabel(app, text=\"\")\nstatus_label.pack(pady=5)\ntitle_label = customtkinter.CTkLabel(app, text=\"Title: \")\ntitle_label.pack(pady=5)\nthumbnail_label = tkinter.Label(app)\nthumbnail_label.pack(pady=10)\napp.mainloop()",
+        "detail": "YoutubeDownloader",
+        "documentation": {}
+    },
+    {
+        "label": "progress_bar",
+        "kind": 5,
+        "importPath": "YoutubeDownloader",
+        "description": "YoutubeDownloader",
+        "peekOfCode": "progress_bar = ttk.Progressbar(progress_frame, variable=progress_var, maximum=100, length=800, mode='determinate')\nprogress_bar.pack()\nstatus_label = customtkinter.CTkLabel(app, text=\"\")\nstatus_label.pack(pady=5)\ntitle_label = customtkinter.CTkLabel(app, text=\"Title: \")\ntitle_label.pack(pady=5)\nthumbnail_label = tkinter.Label(app)\nthumbnail_label.pack(pady=10)\napp.mainloop()",
+        "detail": "YoutubeDownloader",
+        "documentation": {}
+    },
+    {
+        "label": "status_label",
+        "kind": 5,
+        "importPath": "YoutubeDownloader",
+        "description": "YoutubeDownloader",
+        "peekOfCode": "status_label = customtkinter.CTkLabel(app, text=\"\")\nstatus_label.pack(pady=5)\ntitle_label = customtkinter.CTkLabel(app, text=\"Title: \")\ntitle_label.pack(pady=5)\nthumbnail_label = tkinter.Label(app)\nthumbnail_label.pack(pady=10)\napp.mainloop()",
+        "detail": "YoutubeDownloader",
+        "documentation": {}
+    },
+    {
+        "label": "title_label",
+        "kind": 5,
+        "importPath": "YoutubeDownloader",
+        "description": "YoutubeDownloader",
+        "peekOfCode": "title_label = customtkinter.CTkLabel(app, text=\"Title: \")\ntitle_label.pack(pady=5)\nthumbnail_label = tkinter.Label(app)\nthumbnail_label.pack(pady=10)\napp.mainloop()",
+        "detail": "YoutubeDownloader",
+        "documentation": {}
+    },
+    {
+        "label": "thumbnail_label",
+        "kind": 5,
+        "importPath": "YoutubeDownloader",
+        "description": "YoutubeDownloader",
+        "peekOfCode": "thumbnail_label = tkinter.Label(app)\nthumbnail_label.pack(pady=10)\napp.mainloop()",
+        "detail": "YoutubeDownloader",
+        "documentation": {}
+    }
+]
